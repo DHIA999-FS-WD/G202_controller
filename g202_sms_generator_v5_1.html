@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G202 Command Center v1.0</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-color: #f8fafc;
+            --primary: #3b82f6;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --accent: #f59e0b;
+            --border: #334155;
+            --dark-bg: #020617;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 15px;
+            max-width: 550px;
+            margin: 0 auto;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .section {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            color: var(--accent);
+            text-transform: uppercase;
+            border-left: 4px solid var(--accent);
+            padding-left: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background-color: var(--dark-bg);
+            color: white;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        button:active {
+            transform: scale(0.96);
+            opacity: 0.8;
+        }
+
+        .btn-primary { background-color: var(--primary); }
+        .btn-success { background-color: var(--success); }
+        .btn-danger { background-color: var(--danger); }
+        .btn-accent { background-color: var(--accent); color: #000; }
+        .btn-full { grid-column: span 2; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: #94a3b8; }
+
+        /* Feedback Overlay */
+        #status-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .status-card {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            border: 2px solid var(--border);
+            max-width: 85%;
+        }
+
+        .status-icon { font-size: 3.5rem; margin-bottom: 10px; }
+        .status-text { font-size: 1.3rem; font-weight: bold; margin-bottom: 5px; }
+        .status-subtext { color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px; }
+
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 12px;
+            position: fixed;
+            z-index: 200;
+            left: 50%; bottom: 30px;
+            transform: translateX(-50%);
+            border: 1px solid var(--primary);
+        }
+
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 30px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 30px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-top: auto;
+            padding: 15px 0;
+        }
+
+        hr { border: 0; border-top: 1px solid var(--border); margin: 15px 0; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>G202 Command Center</h1>
+    </header>
+
+    <!-- 1. CONFIGURATION DE BASE -->
+    <div class="section">
+        <div class="section-title">⚙️ Configuration de Base</div>
+        <div class="form-group">
+            <label>Numéro G202 (SIM interne)</label>
+            <input type="tel" id="deviceNum" placeholder="Ex: 00216xxxxxxxx" oninput="saveConfig()">
+        </div>
+        <div class="form-group">
+            <label>Mot de Passe Actuel</label>
+            <input type="text" id="pass" value="1234" oninput="saveConfig()">
+        </div>
+    </div>
+
+    <!-- 2. CONTRÔLE RELAIS DIRECT -->
+    <div class="section">
+        <div class="section-title">⚡ Contrôle Direct</div>
+        <div class="btn-grid">
+            <button class="btn-success" onclick="generate('ON')">ALLUMER (ON)</button>
+            <button class="btn-danger" onclick="generate('OFF')">ÉTEINDRE (OFF)</button>
+            <button class="btn-primary btn-full" onclick="generate('STATUS')">Vérifier Statut (EE)</button>
+        </div>
+    </div>
+
+    <!-- 3. NOTIFICATIONS SMS -->
+    <div class="section">
+        <div class="section-title">📩 Notifications SMS</div>
+        <div class="btn-grid">
+            <button class="btn-primary" onclick="generate('CONFIRM_ON')">ACTIVER (#R#)</button>
+            <button class="btn-outline" onclick="generate('CONFIRM_OFF')">DÉSACTIVER (#N#)</button>
+        </div>
+        <p style="font-size: 0.7rem; color: #64748b; margin-top: 8px; text-align: center;">Reçois un SMS à chaque activation du relais.</p>
+    </div>
+
+    <!-- 4. COMPORTEMENT DU RELAIS (GOT) -->
+    <div class="section">
+        <div class="section-title">⏱️ Minuteur Relais (GOT)</div>
+        <div class="form-group">
+            <label>Temps de fermeture (en secondes)</label>
+            <input type="number" id="gotTime" placeholder="Ex: 2.0" step="0.5">
+            <p style="font-size: 0.7rem; color: #64748b; margin-top: 5px;">L'app calcule : 1 unité = 0.5s (Ex: 2.0s = 0004)</p>
+        </div>
+        <div class="btn-grid">
+            <button class="btn-primary" onclick="generate('SET_GOT')">Régler Timer</button>
+            <button class="btn-outline" onclick="generate('CHECK_GOT')">Vérifier Timer</button>
+        </div>
+    </div>
+
+    <!-- 5. GESTION DES UTILISATEURS -->
+    <div class="section">
+        <div class="section-title">👥 Utilisateurs Autorisés</div>
+        <div class="form-group">
+            <label>Numéro de téléphone</label>
+            <input type="tel" id="userNum" placeholder="Ex: 00216xxxxxxxx">
+        </div>
+        <div class="form-group">
+            <label>Position Slot (01-200)</label>
+            <input type="number" id="userPos" placeholder="01" min="1" max="200">
+        </div>
+        <div class="btn-grid">
+            <button class="btn-primary" onclick="generate('ADD_USER')">Ajouter (TEL)</button>
+            <button class="btn-danger" onclick="generate('DEL_USER')">Supprimer (TEL#)</button>
+        </div>
+    </div>
+
+    <!-- 6. CONTRÔLE D'ACCÈS -->
+    <div class="section">
+        <div class="section-title">🔒 Sécurité d'Accès</div>
+        <div class="btn-grid">
+            <button class="btn-primary" onclick="generate('AU')">Liste Autorisée (AU)</button>
+            <button class="btn-outline" onclick="generate('AA')">Accès Ouvert (AA)</button>
+        </div>
+        <p style="font-size: 0.7rem; color: #64748b; margin-top: 8px; text-align: center;">AU: Uniquement les numéros enregistrés.<br>AA: Tout le monde peut appeler.</p>
+    </div>
+
+    <!-- 7. SÉCURITÉ & SYSTÈME -->
+    <div class="section">
+        <div class="section-title">🛡️ Sécurité & Système</div>
+        <div class="form-group">
+            <label>Nouveau Mot de Passe (4 chiffres)</label>
+            <input type="text" id="newPass" placeholder="Ex: 5678" maxlength="4">
+            <button class="btn-accent" style="width:100%; margin-top:10px;" onclick="generate('CHANGE_PWD')">Changer PWD</button>
+        </div>
+        <hr>
+        <div class="btn-grid">
+            <button class="btn-outline" onclick="generate('CSQ')">Signal (CSQ)</button>
+            <button class="btn-danger" style="background-color: #4b5563;" onclick="confirmReset()">RESET Appareil</button>
+        </div>
+    </div>
+
+    <!-- Feedback Overlay -->
+    <div id="status-overlay">
+        <div class="status-card">
+            <div id="status-icon" class="status-icon"></div>
+            <div id="status-text" class="status-text"></div>
+            <div id="status-subtext" class="status-subtext"></div>
+            <button class="btn-primary" style="width:100%" onclick="closeOverlay()">OK</button>
+        </div>
+    </div>
+
+    <div id="toast">Copié !</div>
+    
+    <div class="footer">
+        G202 Industrial SMS Generator &bull; v1&bull; By DHIA EDDINE BOUZAIEN
+    </div>
+
+    <script>
+        const fields = ['deviceNum', 'pass'];
+        
+        window.onload = () => {
+            fields.forEach(id => {
+                const saved = localStorage.getItem(id);
+                if (saved) document.getElementById(id).value = saved;
+            });
+        };
+
+        function saveConfig() {
+            fields.forEach(id => {
+                const val = document.getElementById(id).value;
+                localStorage.setItem(id, val);
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function showOverlay(type, customText = "") {
+            const overlay = document.getElementById('status-overlay');
+            const icon = document.getElementById('status-icon');
+            const text = document.getElementById('status-text');
+            const sub = document.getElementById('status-subtext');
+            
+            overlay.style.display = 'flex';
+            
+            switch(type) {
+                case 'ON': icon.innerText = '🟢'; text.innerText = 'Relais ON'; text.style.color = 'var(--success)'; sub.innerText = 'Commande envoyée.'; break;
+                case 'OFF': icon.innerText = '🔴'; text.innerText = 'Relais OFF'; text.style.color = 'var(--danger)'; sub.innerText = 'Commande envoyée.'; break;
+                case 'RESET': icon.innerText = '⚠️'; text.innerText = 'Reset Envoyé'; text.style.color = 'var(--accent)'; sub.innerText = 'L\'appareil va redémarrer.'; break;
+                case 'PWD': icon.innerText = '🔐'; text.innerText = 'PWD Changé'; text.style.color = 'var(--accent)'; sub.innerText = 'Mettez à jour votre config locale.'; break;
+                case 'GOT': icon.innerText = '⏱️'; text.innerText = 'Timer Configuré'; text.style.color = 'var(--primary)'; sub.innerText = customText; break;
+                case 'ACCESS': icon.innerText = '🔒'; text.innerText = 'Sécurité Changée'; text.style.color = 'var(--primary)'; sub.innerText = customText; break;
+                case 'NOTIF': icon.innerText = '📩'; text.innerText = 'Confirmation SMS'; text.style.color = 'var(--primary)'; sub.innerText = customText; break;
+            }
+        }
+
+        function closeOverlay() {
+            document.getElementById('status-overlay').style.display = 'none';
+        }
+
+        function confirmReset() {
+            if (confirm("Réinitialiser le G202 ?")) generate('RESET');
+        }
+
+        function generate(type) {
+            saveConfig();
+            const deviceNum = document.getElementById('deviceNum').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+            let cmd = "";
+            let feedbackType = type;
+            let feedbackSub = "";
+
+            if (!deviceNum) return alert("Veuillez entrer le numéro du G202 dans la configuration.");
+            if (!pass) return alert("Veuillez entrer le mot de passe actuel.");
+
+            switch(type) {
+                case 'ON': cmd = `${pass}#ON#`; break;
+                case 'OFF': cmd = `${pass}#OFF#`; break;
+                case 'STATUS': cmd = `${pass}#EE#`; break;
+                case 'RESET': cmd = `${pass}#RESET#`; break;
+                case 'CSQ': cmd = `${pass}#CSQ?`; break;
+                case 'AA': cmd = `${pass}#AA#`; feedbackType = 'ACCESS'; feedbackSub = 'Accès ouvert à tous.'; break;
+                case 'AU': cmd = `${pass}#AU#`; feedbackType = 'ACCESS'; feedbackSub = 'Accès restreint aux autorisés.'; break;
+                case 'CONFIRM_ON': cmd = `${pass}#R#`; feedbackType = 'NOTIF'; feedbackSub = 'Confirmation SMS activée.'; break;
+                case 'CONFIRM_OFF': cmd = `${pass}#N#`; feedbackType = 'NOTIF'; feedbackSub = 'Confirmation SMS désactivée.'; break;
+                case 'SET_GOT':
+                    const seconds = parseFloat(document.getElementById('gotTime').value || 0);
+                    // Conversion en unités de 0.5s et formatage sur 4 chiffres (ex: 0004 pour 2s)
+                    const units = Math.round(seconds / 0.5);
+                    cmd = `${pass}#GOT${units.toString().padStart(4, '0')}#`;
+                    feedbackType = 'GOT';
+                    feedbackSub = `Relais réglé sur ${seconds}s (${units} unités).`;
+                    break;
+                case 'CHECK_GOT': cmd = `${pass}#GOT?`; break;
+                case 'ADD_USER':
+                    const uNum = document.getElementById('userNum').value.trim();
+                    const uPos = document.getElementById('userPos').value.trim().padStart(2, '0');
+                    if (!uNum || !uPos) return alert("Numéro et Position requis pour ajouter un utilisateur.");
+                    cmd = `${pass}#TEL${uNum}#${uPos}#`;
+                    break;
+                case 'DEL_USER':
+                    const dPos = document.getElementById('userPos').value.trim().padStart(2, '0');
+                    if (!dPos) return alert("Veuillez entrer la position (01-200) à supprimer.");
+                    cmd = `${pass}#TEL#${dPos}#`;
+                    break;
+                case 'CHANGE_PWD':
+                    const nPass = document.getElementById('newPass').value.trim();
+                    if (!nPass || nPass.length !== 4) return alert("Le nouveau mot de passe doit comporter exactement 4 chiffres.");
+                    cmd = `${pass}#PWD${nPass}#PWD${nPass}#`;
+                    feedbackType = 'PWD';
+                    break;
+            }
+
+            if (cmd) {
+                // Construction de l'URI SMS
+                const smsUri = `sms:${deviceNum}?body=${encodeURIComponent(cmd)}`;
+                
+                // Copie automatique dans le presse-papier pour sécurité
+                navigator.clipboard.writeText(cmd).then(() => {
+                    showToast("Commande copiée !");
+                    
+                    // Déclenchement de l'application SMS native
+                    window.location.href = smsUri;
+                    
+                    // Affichage du feedback visuel
+                    if (['ON', 'OFF', 'RESET', 'PWD', 'GOT', 'ACCESS', 'NOTIF'].includes(feedbackType)) {
+                        setTimeout(() => showOverlay(feedbackType, feedbackSub), 500);
+                    }
+                }).catch(err => {
+                    console.error('Erreur de copie :', err);
+                    window.location.href = smsUri;
+                });
+            }
+        }
+    </script>
+</body>
+</html>
